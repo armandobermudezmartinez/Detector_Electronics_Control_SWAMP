@@ -3,7 +3,7 @@ from SCA_GPIO import SCA_GPIO, GPIO
 from SCA_I2C import SCA_I2C, I2C
 from GBT_SCA import GBT_SCA
 from Transactor import Transactor
-from Virtual_Transactor_Interface import Transactor_Interface
+from Transactor_Interface import Transactor_Interface
 from utils import load_yaml
 
 #######################################
