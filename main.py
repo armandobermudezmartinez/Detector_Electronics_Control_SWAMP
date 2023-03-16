@@ -61,11 +61,11 @@ roc.configure(configuration)
 
 transactor_interface.send_receive()
 
-# print(transactor_interface.number_of_transactions)
+print(transactor_interface.number_of_transactions)
 
-# print(transactor_interface.transaction)
-# for i in range(int(len(transactor_interface.transaction)/4)):
-#     decoded_data = transactor._tx_decode(
-#         transactor_interface.transaction[4*i:4*(i+1)])
-#     print(decoded_data)
-#     print(transactor._tx_encode(**decoded_data))
+print(transactor_interface.transaction)
+for i in range(int(len(transactor_interface.transaction)/4)):
+    decoded_data = transactor_interface._tx_decode(
+        transactor_interface.transaction[4*i:4*(i+1)])
+    print(decoded_data)
+    print(transactor._tx_encode(**decoded_data))
