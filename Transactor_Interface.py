@@ -1,30 +1,28 @@
 import uhal
 import rx_field
 
+CONNECTION_FILE = "file:///opt/cms-hgcal-firmware/hgc-test-systems/active/uHAL_xml/connection.xml"
 
-class Transactor_Interface:
-    def __init__(self, connection=None, device=None):
-        if connection == None:
-            self.connection = "file:///opt/cms-hgcal-firmware/hgc-test-systems/active/uHAL_xml/connection.xml"
-        else:
-            self.connection = connection
 
-        man = uhal.ConnectionManager(self.connection)
-        if device == None:
+class Hexacontroller_HW_Interface:
+    def __init__(self, connection_def_url: str = CONNECTION_FILE, device=None):
+        self.connection_definition = connection_def_url
+        man = uhal.ConnectionManager(self.connection_definition)
+        if device is None:
             self.device = man.getDevice("mylittlememory")
         else:
             self.device = man.getDevice(device)
 
-        self.ResetSlowControl()
-        self.lpGBTResetRX()
-        self.lpGBTReadReady()
+        self._ResetSlowControl()
+        self._lpGBTResetRX()
+        self._lpGBTReadReady()
 
         self.transaction = []
         self.number_of_transactions = 0
         self.response = None
 
     def _lpGBTReadReady(self):
-        data = self.dev.getNode("lpGBT_GPIO.Ready").read()
+        data = self.device.getNode("lpGBT_GPIO.Ready").read()
         if data == 0x0:
             print("Neither RX or TX ready")
         elif data == 0x1:
@@ -37,31 +35,31 @@ class Transactor_Interface:
             print("Unexpected behavior\n")
 
     def _ResetSlowControl(self):
-        self.dev.getNode("config.ResetN.rstn").write(0x0)
-        self.dev.getNode("config.ResetN.rstn").write(0x1)
+        self.device.getNode("config.ResetN.rstn").write(0x0)
+        self.device.getNode("config.ResetN.rstn").write(0x1)
 
     def _lpGBTResetRX(self):
-        self.dev.getNode("lpGBT_GPIO.ResetRX").write(0x1)
-        self.dev.getNode("lpGBT_GPIO.ResetRX").write(0x0)
+        self.device.getNode("lpGBT_GPIO.ResetRX").write(0x1)
+        self.device.getNode("lpGBT_GPIO.ResetRX").write(0x0)
 
     def _add_transaction(self, transaction):
         self.transaction += transaction
         self.number_of_transactions += 1
 
     def _send(self, transactions):
-        self.dev.getNode("data.SCA_TX_BRAM0.Data").writeBlock(transactions)
-        self.dev.getNode("config.SCA_Control0.NbrTransactions").write(
+        self.device.getNode("data.SCA_TX_BRAM0.Data").writeBlock(transactions)
+        self.device.getNode("config.SCA_Control0.NbrTransactions").write(
             self.number_of_transactions)
-        self.dev.getNode("config.SCA_Control0.Start").write(0x1)
-        self.dev.getNode("config.SCA_Control0.Start").write(0x0)
+        self.device.getNode("config.SCA_Control0.Start").write(0x1)
+        self.device.getNode("config.SCA_Control0.Start").write(0x0)
 
     def _receive(self):
         while True:
-            if self.dev.getNode("config.SCA_Status0.Busy").read() == 0:
+            if self.device.getNode("config.SCA_Status0.Busy").read() == 0:
                 break
-        if self.dev.getNode("config.SCA_Status0.TimeoutN").read() == 0:
+        if self.device.getNode("config.SCA_Status0.TimeoutN").read() == 0:
             print("Timeout!")
-        self.response = self.dev.getNode("data.SCA_RX_BRAM0.Data").readBlock(
+        self.response = self.device.getNode("data.SCA_RX_BRAM0.Data").readBlock(
             self.number_of_transactions*4)
 
     def send_receive(self):
@@ -98,10 +96,4 @@ class Transactor_Interface:
                          'error': error,
                          'payload': payload
                          }
-
         return received_dict
-
-
-# transactor_interface = Transactor_Interface()
-# transactor_interface.number_of_transactions = 11
-# transactor_interface._receive()

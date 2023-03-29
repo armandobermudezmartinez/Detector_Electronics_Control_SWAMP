@@ -1,17 +1,17 @@
 import tx_field
+from Transactor_Interface import Hexacontroller_HW_Interface
 
 
 class Transactor:
-    def __init__(self, transactor_interface=0, broadcast_address=0, reply_address=0, sca_address=0):
-        self.transactor_interface = transactor_interface
+    def __init__(self, broadcast_address: int = 0):
+        self.transactor_interface = Hexacontroller_HW_Interface()
         self.broadcast_address = broadcast_address
-        self.reply_address = reply_address
-        self.sca_address = sca_address
+        self.free_transaction_ids = [i for i in range(128)]
 
-    def write(self, channel, command, mask=0, data=0):
-        if len(self.transactor_interface.free_transaction_ids) == 0:
+    def write(self, channel, command, data: int = 0):
+        if len(self.free_transaction_ids) == 0:
             raise Exception("No more free transaction IDs")
-        transaction_id = self.transactor_interface.free_transaction_ids.pop(0)
+        transaction_id = self.free_transaction_ids.pop(0)
         command_id = 0b100
 
         transaction = self._tx_encode(self.broadcast_address, self.reply_address, command_id,
