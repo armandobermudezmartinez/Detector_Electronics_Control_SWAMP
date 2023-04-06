@@ -37,6 +37,8 @@ class SlowControl_Interface:
         logging.info(
             f'Reading registers: sca control: {sca_control}, sca status: {sca_status}')
 
+        self._clean_ic_rx_buffer()
+
         self.message = []
         self.response = []
 

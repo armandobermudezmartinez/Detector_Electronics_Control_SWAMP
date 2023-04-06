@@ -1,6 +1,6 @@
 # from ROCv3 import ROCv3
-#from GBT_SCA import GBT_SCA
-#from Transactor import Transactor
+from GBT_SCA import GBT_SCA
+from Transactor import Transactor
 from SlowControl_Interface import SlowControl_Interface
 # from Virtual_SlowControl_Interface import SlowControl_Interface
 # from utils import load_yaml
@@ -9,10 +9,13 @@ from SlowControl_Interface import SlowControl_Interface
 sc_interface = SlowControl_Interface()
 
 # Instantiate the Transactor(s).
-# transactor = Transactor(sc_interface=sc_interface)
+transactor = Transactor(sc_interface=sc_interface)
 
 # Instantiate the GBT_SCA(s).
-# gbt_sca = GBT_SCA(transactor=transactor)
+gbt_sca = GBT_SCA(transactor=transactor)
+
+# print(sc_interface.response)
+
 
 #print([hex(val) for val in transactor.transaction])
 # print(transactor.response)
