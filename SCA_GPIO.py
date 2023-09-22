@@ -7,7 +7,8 @@ class SCA_GPIO:
         self.transactor = transactor
         self.pin = [None] * 32
         self.pin_block_disabled = True
-        self._modes_cache = 0
+        self._mode_mask = 0
+        self._mode = 0
         self._outputs_cache = 0
 
     def __getitem__(self, pin_number):
@@ -20,20 +21,24 @@ class SCA_GPIO:
             self.pin[pin_number] = Pin(self, pin_number)
         return self.pin[pin_number]
 
+
     def _enable_gpio(self, enableGPIO=1):
         m3, d3 = CTRL["MASK_CRB_PARAL"], CTRL["MASK_CRB_PARAL"] if enableGPIO else 0
         mask, data = from_8bit_to_32bit(m3), from_8bit_to_32bit(d3)
-        self.transactor.write(CTRL["CHANNEL_CTRL"], CTRL["R_CRB"])
         self.transactor.write(CTRL["CHANNEL_CTRL"],
-                              CTRL["W_CRB"], mask=mask, data=data)
+                              CTRL["W_CRB"], mask=mask, data=data, comment='Enable all Pins')
+
+    def _read_enable_gpio(self):
+        self.transactor.write(
+            CTRL["CHANNEL_CTRL"], CTRL["R_CRB"], comment='Read which Pins are Enabled')
 
     def _set_gpio_mode(self, pin, mode):
-        mask = 1 << pin
-        data = mode << pin
-        if (self._modes_cache & mask) != data:
-            self._modes_cache = ((self._modes_cache & ~mask) | data)
-            self.transactor.write(
-                GPIO["CHANNEL"], GPIO["W_DIRECTION"], mask=mask, data=data)
+        self._mode |= mode << pin
+        self.transactor.write(
+            GPIO["CHANNEL"], GPIO["W_DIRECTION"], mask=self._mode, data=self._mode, comment=f'Set Mode of Pin {pin}')
+
+    def _get_gpio_mode(self):
+        self.transactor.write(GPIO["CHANNEL"], GPIO["R_DIRECTION"], comment='Reading the Mode of all Pins')
 
     def _gpio_write(self, pin, output):
         mask = 1 << pin

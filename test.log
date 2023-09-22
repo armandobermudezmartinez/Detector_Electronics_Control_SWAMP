@@ -1,0 +1,28 @@
+INFO:Found 1 device(s): ['mylittlememory']
+INFO:Using device mylittlememory
+INFO:Nodes: ['data', 'data.SCA_TX_BRAM0', 'data.SCA_TX_BRAM0.Data', 'data.SCA_RX_BRAM0', 'data.SCA_RX_BRAM0.Data', 'data.IC_TX_BRAM0', 'data.IC_TX_BRAM0.Data', 'data.IC_RX_BRAM0', 'data.IC_RX_BRAM0.Data', 'config', 'config.SCA_Control0', 'config.SCA_Control0.Start', 'config.SCA_Control0.Enable', 'config.SCA_Control0.NbrTransactions', 'config.IC_Control0', 'config.IC_Control0.Start', 'config.IC_Control0.Enable', 'config.IC_Control0.NbrTransactions', 'config.SCA_Status0', 'config.SCA_Status0.TimeoutN', 'config.SCA_Status0.Busy', 'config.SCA_Status0.zero_cmd', 'config.SCA_Status0.NbrTransactions', 'config.IC_Status0', 'config.IC_Status0.TimeoutN', 'config.IC_Status0.Busy', 'config.IC_Status0.zero_cmd', 'config.IC_Status0.NbrTransactions', 'config.ResetN', 'config.ResetN.rstn', 'config.DEADBEEF', 'config.DEADBEEF.DEADBEEF', 'config.C0FFEE', 'config.C0FFEE.C0FFEE', 'AXI_GPIO', 'AXI_GPIO.Sticky_Bit', 'AXI_GPIO.MMCM_Locked', 'AXI_GPIO.Clk40_Freq', 'AXI_GPIO.Sticky_Bit_control', 'lpGBT_GPIO', 'lpGBT_GPIO.Ready', 'lpGBT_GPIO.ResetRX']
+INFO:Resetting Slow Control
+INFO:Reading registers: sca control: 0, ic control: 0, sca status: 1, ic status: 1
+INFO:Frequency of Slow Control: 40 MHz
+INFO:Cleaning IC RX buffer
+INFO:Resetting lpGBT RX
+WARNING:Only TX ready
+INFO:Number of successful transactions 5
+INFO:Timeout Ok
+INFO:Number of Successful transactions: 3
+INFO:Timeout Ok
+INFO:Number of Successful transactions: 4
+INFO:Found 1 device(s): ['mylittlememory']
+INFO:Using device mylittlememory
+INFO:Nodes: ['data', 'data.SCA_TX_BRAM0', 'data.SCA_TX_BRAM0.Data', 'data.SCA_RX_BRAM0', 'data.SCA_RX_BRAM0.Data', 'data.IC_TX_BRAM0', 'data.IC_TX_BRAM0.Data', 'data.IC_RX_BRAM0', 'data.IC_RX_BRAM0.Data', 'config', 'config.SCA_Control0', 'config.SCA_Control0.Start', 'config.SCA_Control0.Enable', 'config.SCA_Control0.NbrTransactions', 'config.IC_Control0', 'config.IC_Control0.Start', 'config.IC_Control0.Enable', 'config.IC_Control0.NbrTransactions', 'config.SCA_Status0', 'config.SCA_Status0.TimeoutN', 'config.SCA_Status0.Busy', 'config.SCA_Status0.zero_cmd', 'config.SCA_Status0.NbrTransactions', 'config.IC_Status0', 'config.IC_Status0.TimeoutN', 'config.IC_Status0.Busy', 'config.IC_Status0.zero_cmd', 'config.IC_Status0.NbrTransactions', 'config.ResetN', 'config.ResetN.rstn', 'config.DEADBEEF', 'config.DEADBEEF.DEADBEEF', 'config.C0FFEE', 'config.C0FFEE.C0FFEE', 'AXI_GPIO', 'AXI_GPIO.Sticky_Bit', 'AXI_GPIO.MMCM_Locked', 'AXI_GPIO.Clk40_Freq', 'AXI_GPIO.Sticky_Bit_control', 'lpGBT_GPIO', 'lpGBT_GPIO.Ready', 'lpGBT_GPIO.ResetRX']
+INFO:Resetting Slow Control
+INFO:Reading registers: sca control: 0, ic control: 0, sca status: 1, ic status: 1
+INFO:Frequency of Slow Control: 40 MHz
+INFO:Cleaning IC RX buffer
+INFO:Resetting lpGBT RX
+WARNING:Only TX ready
+INFO:Number of successful transactions 5
+INFO:Timeout Ok
+INFO:Number of Successful transactions: 3
+INFO:Timeout Ok
+INFO:Number of Successful transactions: 4

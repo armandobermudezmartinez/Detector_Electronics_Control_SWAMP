@@ -2,7 +2,6 @@
 from GBT_SCA import GBT_SCA
 from Transactor import Transactor
 from SlowControl_Interface import SlowControl_Interface
-# from Virtual_SlowControl_Interface import SlowControl_Interface
 # from utils import load_yaml
 
 # Instantiate the Interface that connects to the hardware.
@@ -14,20 +13,33 @@ transactor = Transactor(sc_interface=sc_interface)
 # Instantiate the GBT_SCA(s).
 gbt_sca = GBT_SCA(transactor=transactor)
 
-# print(sc_interface.response)
+transactor.read()
+
+# Instantiate the I2C master(s).
+i2c = []
+for i in range(16):
+    i2c.append(gbt_sca.i2c[i])
+
+transactor.read()
+
+gbt_sca.read_enable_i2c()
+transactor.read()
 
 
-#print([hex(val) for val in transactor.transaction])
-# print(transactor.response)
-# # Instantiate the I2C master(s).
-# i2c = gbt_sca.i2c[0]
-# i2c.set_speed(400)
+# # Instantiate pin(s).
+#pin = []
+#for i in range(32):
+#    pin.append(gbt_sca.pin[i])
+#    if i % 2:
+#        pin[i].set_mode('out')
+#    else:
+#        pin[i].set_mode('in')
 
-# Instantiate pin(s).
-# reset_pin = gbt_sca.pin[3]
-# reset_pin.set_mode("out")
-# reset_pin.write(1)
-# print(reset_pin.mode)
+#transactor.read()
+
+#gbt_sca.read_gpio_mode()
+#transactor.read()
+
 
 # # Instantiate the ROC(s)
 # roc = ROCv3(transport=i2c, bus=0, base_address=0, name='roc',
