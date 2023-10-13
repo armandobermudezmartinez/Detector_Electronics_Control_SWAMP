@@ -52,7 +52,8 @@ class Transactor:
             print("Encoded Transaction:\n", encoded_transaction[4*i: 4*(i+1)])
             print("Response:\n", self.response[i])
             print("Comment:", comments[i])
-        print(f"Number of Transactions: {number_of_transactions}, Number of Successful Transactions: {number_of_transactions}")
+        print(
+            f"Number of Transactions: {number_of_transactions}, Number of Successful Transactions: {number_of_transactions}")
         print(120*"-")
 
     def gbtsca_tx_encode(self, bst_address, repl_address, cmd_id, sca_address, trans_id, ch_address, cmd, payload):

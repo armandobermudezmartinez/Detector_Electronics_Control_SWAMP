@@ -5,10 +5,11 @@ from utils import from_8bit_to_32bit
 class SCA_I2C:
     def __init__(self, transactor):
         self.transactor = transactor
+        self.number_of_i2cs = 16
         self.i2c = [None] * 16
 
     def __getitem__(self, index):
-        if index not in range(16):
+        if index not in range(self.number_of_i2cs):
             raise Exception(
                 "I2C-channel index out of permissible range [0, 15]")
         if self.i2c[index] is None:

@@ -5,14 +5,15 @@ from utils import from_8bit_to_32bit
 class SCA_GPIO:
     def __init__(self, transactor):
         self.transactor = transactor
-        self.pin = [None] * 32
+        self.number_of_pins = 32
+        self.pin = [None] * self.number_of_pins
         self.pin_block_disabled = True
         self._mode_mask = 0
         self._mode = 0
         self._outputs_cache = 0
 
     def __getitem__(self, pin_number):
-        if pin_number not in range(32):
+        if pin_number not in range(self.number_of_pins):
             raise Exception("Pin number out of range")
         if self.pin_block_disabled:
             self._enable_gpio()
@@ -20,7 +21,6 @@ class SCA_GPIO:
         if self.pin[pin_number] is None:
             self.pin[pin_number] = Pin(self, pin_number)
         return self.pin[pin_number]
-
 
     def _enable_gpio(self, enableGPIO=1):
         m3, d3 = CTRL["MASK_CRB_PARAL"], CTRL["MASK_CRB_PARAL"] if enableGPIO else 0
@@ -38,7 +38,8 @@ class SCA_GPIO:
             GPIO["CHANNEL"], GPIO["W_DIRECTION"], mask=self._mode, data=self._mode, comment=f'Set Mode of Pin {pin}')
 
     def _get_gpio_mode(self):
-        self.transactor.write(GPIO["CHANNEL"], GPIO["R_DIRECTION"], comment='Reading the Mode of all Pins')
+        self.transactor.write(
+            GPIO["CHANNEL"], GPIO["R_DIRECTION"], comment='Reading the Mode of all Pins')
 
     def _gpio_write(self, pin, output):
         mask = 1 << pin

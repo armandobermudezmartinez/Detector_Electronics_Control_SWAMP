@@ -1,5 +1,7 @@
 from SCA_I2C import SCA_I2C
 from SCA_GPIO import SCA_GPIO
+from SCA_ADC import SCA_ADC
+from SCA_DAC import SCA_DAC
 from gbtsca_config import gbtsca_reset, gbtsca_connect, gbtsca_start
 
 
@@ -8,6 +10,8 @@ class GBT_SCA:
         self.transactor = transactor
         self.i2c = SCA_I2C(transactor)
         self.pin = SCA_GPIO(transactor)
+        self.adc = SCA_ADC(transactor)
+        self.dac = SCA_DAC(transactor)
 
         self.configure()
 
@@ -18,17 +22,19 @@ class GBT_SCA:
         self.reset()
         self.connect()
         self.start()
-        #self.flush()
+        # self.flush()
 
     def reset(self):
         self.transactor.write(gbtsca_reset['ch_address'], gbtsca_reset['cmd'],
                               command_id=gbtsca_reset['cmd_id'], data=gbtsca_reset['payload'], comment='Reseting SCA')
-        self.transactor.free_transaction_ids.append(self.transactor._transaction_id)
+        self.transactor.free_transaction_ids.append(
+            self.transactor._transaction_id)
 
     def connect(self):
         self.transactor.write(gbtsca_connect['ch_address'], gbtsca_connect['cmd'],
                               command_id=gbtsca_connect['cmd_id'], data=gbtsca_connect['payload'], comment='Connecting SCA')
-        self.transactor.free_transaction_ids.append(self.transactor._transaction_id)
+        self.transactor.free_transaction_ids.append(
+            self.transactor._transaction_id)
 
     def start(self):
         self.transactor.write(gbtsca_start['ch_address'], gbtsca_start['cmd'],
