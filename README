@@ -5,10 +5,10 @@ testbeam20
 naf
 
 ssh hgcal@ftxhgcal2.desy.de
-pwd: testbeam20 
+pwd: ... 
 
 ssh HGCAL_dev@10.254.56.35
-pwd: daq5HGCAL!
+pwd: ...
 
 # load the firmware
 sudo fw-loader load tileboard-tester-v2p0
