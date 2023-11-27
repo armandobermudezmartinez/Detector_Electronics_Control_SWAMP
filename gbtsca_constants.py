@@ -76,10 +76,10 @@ I2C = {
     "R_7B_SINGLE": 0x86,
     "W_7B_MULTI": 0xDA,
     "R_7B_MULTI": 0xDE,
-    "W_10B_SINGLE": 0x82,
-    "R_10B_SINGLE": 0x86,
-    "W_10B_MULTI": 0xDA,
-    "R_10B_MULTI": 0xDE,
+    "W_10B_SINGLE": 0x8A,
+    "R_10B_SINGLE": 0x8E,
+    "W_10B_MULTI": 0xE2,
+    "R_10B_MULTI": 0xE6,
 
     # bit masks
     "MASK_CTRL_REG_SCLDRIVE": 0x80,

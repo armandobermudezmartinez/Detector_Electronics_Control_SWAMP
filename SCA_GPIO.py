@@ -1,74 +1,95 @@
-from Transactor import Transactor
-from GBT_SCA import GBT_SCA
+from gbtsca_constants import CTRL, GPIO
+from utils import from_8bit_to_32bit
 
 
 class SCA_GPIO:
-    def __init__(self, gbt_sca=0, number_of_pins=0):
-        if number_of_pins > 32:
-            raise Exception("Number of pins exceeds GBT_SCA GPIO block")
-        self.gbt_sca = gbt_sca
-        self.number_of_pins = number_of_pins
-        self._number_of_used_pins = 0
-        self.directions = 0
-        self.output = 0
-        self.output_mask = 0
+    def __init__(self, transactor):
+        self.transactor = transactor
+        self.number_of_pins = 32
+        self.pin = [None] * self.number_of_pins
+        self.pin_block_disabled = True
+        self._mode_mask = 0
+        self._mode = 0
+        self._outputs_cache = 0
+        self.cache_output = 0
+        self.cache_mask = 0
+        # print(CTRL["CHANNEL_CTRL"], GPIO["CHANNEL"])
+
+    def __getitem__(self, pin_number):
+        if pin_number not in range(self.number_of_pins):
+            raise Exception("Pin number out of range")
+        if self.pin_block_disabled:
+            self._enable()
+            self.pin_block_disabled = False
+        if self.pin[pin_number] is None:
+            self.pin[pin_number] = Pin(self, pin_number)
+        return self.pin[pin_number]
+
+    def _enable(self, enableGPIO=1):
+        m3, d3 = CTRL["MASK_CRB_PARAL"], CTRL["MASK_CRB_PARAL"] if enableGPIO else 0
+        mask, data = from_8bit_to_32bit(m3), from_8bit_to_32bit(d3)
+        # print('dataaa', data)
+        cache = from_8bit_to_32bit(self.transactor.cache_CRB)
+        self.transactor.write(CTRL["CHANNEL_CTRL"],
+                              CTRL["W_CRB"], mask=mask, data=data, cache=cache, comment='Enable all Pins')
+        # print('i2c mask', bin(m3))
+        # print('gpio data', bin(d3), 'cache CRB', bin(self.transactor.cache_CRB))
+        self.transactor.cache_CRB |= d3
+        # print('enable CRB', self.transactor.cache_CRB)
+        self.transactor.send()
+
+    def _read_enable(self):
+        self.transactor.write(
+            CTRL["CHANNEL_CTRL"], CTRL["R_CRB"], comment='Read which Pins are Enabled')
+        self.transactor.send()
 
     def _set_mode(self, pin, mode):
-        self.directions |= mode < pin
-        if mode == 1:
-            self.output_mask = 1 << pin
+        self._mode |= mode << pin
+        self.transactor.write(
+            GPIO["CHANNEL"], GPIO["W_DIRECTION"], mask=self._mode, data=self._mode, comment=f'Set Mode of Pin {pin}')
+        self.transactor.send()
 
-    def _enable(self):
-        self.gbt_sca.enable_gpio()
-        self.gbt_sca.set_gpio_direction(self.directions)
+    def _get_mode(self):
+        self.transactor.write(
+            GPIO["CHANNEL"], GPIO["R_DIRECTION"], comment='Reading the Mode of all Pins')
+        self.transactor.send()
 
-    def _write(self, output_mask, output):
-        self.gbt_sca.gpio_write(output_mask, output)
+    def _get_output(self):
+        self.transactor.write(GPIO["CHANNEL"],
+                              GPIO["R_DATAOUT"], comment='Get gpio output')
+        self.transactor.send()
+
+    def _write(self, pin, output):
+        mask = 1 << pin
+        output = output << pin
+        self.cache_output = self.cache_output | output
+        self.transactor.write(
+            GPIO["CHANNEL"], GPIO["W_DATAOUT"], mask=mask, data=self.cache_output, comment=f'Write {output >> pin} to pin {pin}')
+        self.transactor.send()
+
+    def _read(self):
+        self.transactor.write(GPIO["CHANNEL"],
+                              GPIO["R_DATAIN"], comment='Read gpio')
+        self.transactor.send()
 
 
-class GPIO:
-    def __init__(self, sca_gpio, pin, mode):
-        sca_gpio._number_of_used_pins += 1
-        if sca_gpio._number_of_used_pins > sca_gpio.number_of_pins:
-            raise Exception("Number of pins exceeds number of available pins")
+class Pin:
+    def __init__(self, sca_gpio, pin_number):
         self.sca_gpio = sca_gpio
-        self.pin = pin
-        self.mode = mode
-        self.sca_gpio._set_mode(self.pin, self.mode)
-        if self.sca_gpio._number_of_used_pins == self.sca_gpio.number_of_pins:
-            self.sca_gpio._enable()
-        self.value = 1 if mode == 1 else None
+        self.pin_number = pin_number
+        self._mode = 0
+        self.output = None
 
-    def write(self, value):
-        if self.mode == 1:
-            self.sca_gpio._write(1 << self.pin, value << self.pin)
-            self.value = value
+    def mode(self, mode):
+        if mode == "in":
+            self._mode = 0
+        elif mode == "out":
+            self._mode = 1
+        else:
+            raise Exception('Pin mode must be either "in" or "out"')
+        self.sca_gpio._set_mode(self.pin_number, self._mode)
 
-
-# transactor = Transactor()
-# sca = GBT_SCA(transactor=transactor)
-# sca_gpio = SCA_GPIO(gbt_sca=sca, target_number_of_used_pins=2)
-# reset_pin = GPIO(sca_gpio=sca_gpio, pin=0, mode=1)
-# test_pin = GPIO(sca_gpio=sca_gpio, pin=5, mode=0)
-# reset_pin.write(1)
-
-# roc = ROCv3(transport=sca_i2c[0],
-#             base_address=0,
-#             name='roc',
-#             reset_pin=gbt_sca.reset_pin,
-#             path_to_file=virtual_roc.path_to_registers_map)
-
-
-# test_pin = GPIO(sca_gpio=sca_gpio, pin=0, mode=0)
-# reset_pin.write(1)
-# sca_gpio.write()
-
-# print(bin(sca_gpio.output))
-
-# roc_reset_pin.
-
-
-# gpio = SCA_GPIO()
-# gpio.
-
-# print(bin(gpio.pins))
+    def write(self, output):
+        if self._mode == 1:
+            self.sca_gpio._write(self.pin_number, output)
+            self.output = output

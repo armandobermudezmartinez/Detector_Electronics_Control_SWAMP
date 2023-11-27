@@ -1,127 +1,74 @@
-from utils import from_8bit_to_32bit
-from gbtsca_constants import CTRL, I2C, GPIO
-
+from SCA_I2C import SCA_I2C
+from SCA_GPIO import SCA_GPIO
+from SCA_ADC import SCA_ADC
+from SCA_DAC import SCA_DAC
+from gbtsca_config import gbtsca_reset, gbtsca_connect, gbtsca_start
+from gbtsca_constants import CTRL
+from time import sleep
 
 class GBT_SCA:
-    def __init__(self, transactor):  # , transactor):
+    def __init__(self, transactor):
         self.transactor = transactor
+        self.i2c = SCA_I2C(transactor)
+        self.pin = SCA_GPIO(transactor)
+        self.adc = SCA_ADC(transactor)
+        self.dac = SCA_DAC(transactor)
 
-    #
-    # Controlling I2C masters
-    #
+        self.configure()
+        #self.transactor.send()
 
-    def enable_i2c(self, index=0, i2c_bus_frequency=100):
-        if index not in range(16):
-            raise Exception("I2C-channel index out of range")
-        if i2c_bus_frequency not in [100, 200, 400, 1000]:
-            raise Exception("Bus frequency not among permissible values")
+    def flush(self):
+        self.transactor.flush()
 
-        index_bit = (1 << index)
-        channel = I2C["CHANNEL_MAP"][index]
+    def configure(self):
+        self.reset()
+        self.connect()
+        self.start()
+        # self.flush()
 
-        INPUTMASK_CRB = 0x001f
-        INPUTMASK_CRC = 0x1fe0
-        INPUTMASK_CRD = 0xe000
+    def reset(self):
+        self.transactor.write(gbtsca_reset['ch_address'], gbtsca_reset['cmd'],
+                              command_id=gbtsca_reset['cmd_id'], data=gbtsca_reset['payload'], comment='Resetting SCA')
+        self.transactor.free_transaction_ids.append(
+            self.transactor._transaction_id)
+        self.transactor.send()
+#        sleep(1)
 
-        if (index_bit & INPUTMASK_CRB):
-            d3 = 0
-            if ((1 << 0) & index_bit):
-                d3 = d3 | CTRL["MASK_CRB_I2C0"]
-            if ((1 << 1) & index_bit):
-                d3 = d3 | CTRL["MASK_CRB_I2C1"]
-            if ((1 << 2) & index_bit):
-                d3 = d3 | CTRL["MASK_CRB_I2C2"]
-            if ((1 << 3) & index_bit):
-                d3 = d3 | CTRL["MASK_CRB_I2C3"]
-            if ((1 << 4) & index_bit):
-                d3 = d3 | CTRL["MASK_CRB_I2C4"]
+    def connect(self):
+        self.transactor.write(gbtsca_connect['ch_address'], gbtsca_connect['cmd'],
+                              command_id=gbtsca_connect['cmd_id'], data=gbtsca_connect['payload'], comment='Connecting SCA')
+        self.transactor.free_transaction_ids.append(
+            self.transactor._transaction_id)
+        self.transactor.send()
+#        sleep(1)
 
-            m3 = CTRL["MASK_CRB_I2C0"] | CTRL["MASK_CRB_I2C1"] | CTRL[
-                "MASK_CRB_I2C2"] | CTRL["MASK_CRB_I2C3"] | CTRL["MASK_CRB_I2C4"]
+    def start(self):
+        self.transactor.write(gbtsca_start['ch_address'], gbtsca_start['cmd'],
+                              command_id=gbtsca_start['cmd_id'], data=gbtsca_start['payload'], comment='Starting SCA')
+        self.transactor.send()
+#        sleep(1)      
 
-            mask = from_8bit_to_32bit(m3)
-            data = from_8bit_to_32bit(d3)
-            self.transactor.write(CTRL["CHANNEL_CTRL"], CTRL["R_CRB"])
-            self.transactor.write(CTRL["CHANNEL_CTRL"],
-                                  CTRL["W_CRB"], mask, data)
+    def read_enable_i2c(self):
+        self.i2c._read_enable_i2c()
 
-        if (index_bit & INPUTMASK_CRC):
-            d3 = 0
-            if ((1 << 5) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C5"]
-            if ((1 << 6) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C6"]
-            if ((1 << 7) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C7"]
-            if ((1 << 8) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C8"]
-            if ((1 << 9) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C9"]
-            if ((1 << 10) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C10"]
-            if ((1 << 11) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C11"]
-            if ((1 << 12) & index_bit):
-                d3 = d3 | CTRL["MASK_CRC_I2C12"]
+    def enable_gpio(self):
+        self.pin._enable_gpio()
 
-            m3 = CTRL["MASK_CRC_I2C5"] | CTRL["MASK_CRC_I2C6"] | CTRL["MASK_CRC_I2C7"] | CTRL[
-                "MASK_CRC_I2C8"] | CTRL["MASK_CRC_I2C9"] | CTRL["MASK_CRC_I2C10"] | CTRL[
-                "MASK_CRC_I2C11"] | CTRL["MASK_CRC_I2C12"]
+    def read_enable_gpio(self):
+        self.pin._read_enable_gpio()
 
-            mask = from_8bit_to_32bit(m3)
-            data = from_8bit_to_32bit(d3)
-            self.transactor.write(CTRL["CHANNEL_CTRL"], CTRL["R_CRC"])
-            self.transactor.write(CTRL["CHANNEL_CTRL"],
-                                  CTRL["W_CRC"], mask, data)
+    def read_gpio_mode(self):
+        self.pin._get_gpio_mode()
 
-        if (index_bit & INPUTMASK_CRD):
-            d3 = 0
-            if ((1 << 13) & index_bit):
-                d3 = d3 | CTRL["MASK_CRD_I2C13"]
-            if ((1 << 14) & index_bit):
-                d3 = d3 | CTRL["MASK_CRD_I2C14"]
-            if ((1 << 15) & index_bit):
-                d3 = d3 | CTRL["MASK_CRD_I2C15"]
+    def _read_device_id(self, version='v2'):
+        if (version == 'v2'):
+            self.transactor.write(CTRL["CHANNEL_ID"],
+                                  CTRL["R_CHIP_ID_V2"], comment='read device ID V2')
+        
+        elif (version == 'v1'):
+            self.transactor.write(CTRL["CHANNEL_ID"],
+                             CTRL["R_CHIP_ID_V1"], comment='read device id V1')
+        else: 
+            raise Exception("Version not within available options: v1, v2")
 
-            m3 = CTRL["MASK_CRD_I2C13"] | CTRL[
-                "MASK_CRD_I2C14"] | CTRL["MASK_CRD_I2C15"]
-
-            mask = from_8bit_to_32bit(m3)
-            data = from_8bit_to_32bit(d3)
-            self.transactor.write(CTRL["CHANNEL_CTRL"], CTRL["R_CRD"])
-            self.transactor.write(CTRL["CHANNEL_CTRL"],
-                                  CTRL["W_CRD"], mask, data)
-
-        self._set_i2c_bus_frequency(channel, i2c_bus_frequency)
-
-    def _set_i2c_bus_frequency(self, channel, frequency):
-        frequencies = {
-            100: 0b00,
-            200: 0b01,
-            400: 0b10,
-            1000: 0b11
-        }
-
-        m3, d3 = I2C["MASK_CTRL_REG_SPEED"], frequencies[frequency]
-        mask, data = from_8bit_to_32bit(m3), from_8bit_to_32bit(d3)
-        self.transactor.write(channel, I2C["R_CTRL_REG"])
-        self.transactor.write(channel, I2C["W_CTRL_REG"], mask, data)
-
-    #
-    # Controlling GPIOs
-    #
-
-    def enable_gpio(self, enableGPIO=1):
-        m3, d3 = CTRL["MASK_CRB_PARAL"], CTRL["MASK_CRB_PARAL"] if enableGPIO else 0
-        mask, data = from_8bit_to_32bit(m3), from_8bit_to_32bit(d3)
-        self.transactor.write(CTRL["CHANNEL_CTRL"], CTRL["R_CRB"])
-        self.transactor.write(CTRL["CHANNEL_CTRL"], CTRL["W_CRB"], mask, data)
-
-    def set_gpio_direction(self, directions=0):
-        mask = 0xFFFFFFFF
-        data = directions
-        self.transactor.write(GPIO["CHANNEL"], GPIO["W_DATAOUT"], mask, data)
-
-    def gpio_write(self, mask=0, data=0):
-        self.transactor.write(GPIO["CHANNEL"], GPIO["R_DATAOUT"])
-        self.transactor.write(GPIO["CHANNEL"], GPIO["W_DATAOUT"], mask, data)
+        self.transactor.send()

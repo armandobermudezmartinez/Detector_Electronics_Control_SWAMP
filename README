@@ -1,0 +1,21 @@
+testbeam20
+
+# connect to the right machine
+
+naf
+
+ssh hgcal@ftxhgcal2.desy.de
+pwd: ... 
+
+ssh HGCAL_dev@10.254.56.35
+pwd: ...
+
+# load the firmware
+sudo fw-loader load tileboard-tester-v2p0
+
+# check the active firmware
+sudo fw-loader list
+
+# faster
+ssh -A -J bermudea@naf-cms16.desy.de hgcal@ftxhgcal2.desy.de
+ssh HGCAL_dev@10.254.56.35
