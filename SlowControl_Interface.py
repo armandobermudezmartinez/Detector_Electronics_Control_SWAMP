@@ -1,5 +1,9 @@
 import uhal
 import logging
+# import tx_field
+# import rx_field
+import warnings
+from time import sleep
 
 
 class SlowControl_Interface:
@@ -29,8 +33,10 @@ class SlowControl_Interface:
 
         self._reset_slow_control()
 
-        sca_control = self.device.getNode("Transactor-Slow-Control-0_config.SCA_Control0").read()
-        sca_status = self.device.getNode("Transactor-Slow-Control-0_config.SCA_Status0").read()
+        sca_control = self.device.getNode(
+            "Transactor-Slow-Control-0_config.SCA_Control0").read()
+        sca_status = self.device.getNode(
+            "Transactor-Slow-Control-0_config.SCA_Status0").read()
 
         logging.info(
             f'Reading registers: sca control: {sca_control}, sca status: {sca_status}')
@@ -42,8 +48,10 @@ class SlowControl_Interface:
 
     def _reset_slow_control(self):
         logging.info('Resetting Slow Control')
-        self.device.getNode("Transactor-Slow-Control-0_config.ResetN.rstn").write(0x0)
-        self.device.getNode("Transactor-Slow-Control-0_config.ResetN.rstn").write(0x1)
+        self.device.getNode(
+            "Transactor-Slow-Control-0_config.ResetN.rstn").write(0x0)
+        self.device.getNode(
+            "Transactor-Slow-Control-0_config.ResetN.rstn").write(0x1)
 
     def _clean_ic_rx_buffer(self):
         logging.info('Cleaning IC RX buffer')
@@ -52,24 +60,30 @@ class SlowControl_Interface:
 
     def flush(self):
         self._send(self.message)
+        # sleep(2)
         return self._receive()
 
     def _send(self, message, type='sca'):
         self.number_of_transactions = int(len(message) / 4)
         if type == 'sca':
-            self.device.getNode("Transactor-Slow-Control-0_data.SCA_TX_BRAM0.Data").writeBlock(message)
+            self.device.getNode(
+                "Transactor-Slow-Control-0_data.SCA_TX_BRAM0.Data").writeBlock(message)
             self.device.getNode("Transactor-Slow-Control-0_config.SCA_Control0.NbrTransactions").write(
                 self.number_of_transactions)
-            self.device.getNode("Transactor-Slow-Control-0_config.SCA_Control0.Start").write(0x0)
-            self.device.getNode("Transactor-Slow-Control-0_config.SCA_Control0.Start").write(0x1)
+            self.device.getNode(
+                "Transactor-Slow-Control-0_config.SCA_Control0.Start").write(0x0)
+            self.device.getNode(
+                "Transactor-Slow-Control-0_config.SCA_Control0.Start").write(0x1)
 
         elif type == 'ic':
             self.device.getNode(
                 "Transactor-Slow-Control-0_data.IC_TX_BRAM0.Data").writeBlock(message)
             self.device.getNode("Transactor-Slow-Control-0_config.IC_Control0.NbrTransactions").write(
                 self.number_of_transactions)
-            self.device.getNode("Transactor-Slow-Control-0_config.IC_Control0.Start").write(0x0)
-            self.device.getNode("Transactor-Slow-Control-0_config.IC_Control0.Start").write(0x1)
+            self.device.getNode(
+                "Transactor-Slow-Control-0_config.IC_Control0.Start").write(0x0)
+            self.device.getNode(
+                "Transactor-Slow-Control-0_config.IC_Control0.Start").write(0x1)
 
     def _receive(self, type='sca'):
         number_of_successful_transactions = 0
@@ -79,17 +93,20 @@ class SlowControl_Interface:
                     break
             data = self.device.getNode("Transactor-Slow-Control-0_data.SCA_RX_BRAM0.Data").readBlock(
                 self.number_of_transactions*4)
-            number_of_successful_transactions = self.device.getNode("Transactor-Slow-Control-0_config.SCA_Status0.NbrTransactions").read()
+            number_of_successful_transactions = self.device.getNode(
+                "Transactor-Slow-Control-0_config.SCA_Status0.NbrTransactions").read()
             if self.device.getNode("Transactor-Slow-Control-0_config.SCA_Status0.zero_cmd").read() == 1:
                 logging.error(
                     'Asked for 0 transactions')
-
+            # sleep(0.1)
             if self.device.getNode("Transactor-Slow-Control-0_config.SCA_Status0.TimeoutN").read() != 1:
                 logging.error('Timeout!')
-                raise Exception('Timeout!')
+                # raise Exception('Timeout!')
+                warnings.warn('Timeout!')
             else:
                 logging.info("Timeout Ok")
-            logging.info(f'Number of Successful transactions: {number_of_successful_transactions}')
+            logging.info(
+                f'Number of Successful transactions: {number_of_successful_transactions}')
 
         elif type == 'ic':
             while 1:
@@ -97,7 +114,8 @@ class SlowControl_Interface:
                     break
             data = self.device.getNode(
                 "Transactor-Slow-Control-0_data.IC_RX_BRAM0.Data").readBlock(self.number_of_transactions*4)
-            number_of_successful_transactions = self.device.getNode("Transactor-Slow-Control-0_config.IC_Status0.NbrTransactions").read()
+            number_of_successful_transactions = self.device.getNode(
+                "Transactor-Slow-Control-0_config.IC_Status0.NbrTransactions").read()
             logging.info(
                 f'Number of successful transactions {number_of_successful_transactions}')
 
@@ -111,4 +129,3 @@ class SlowControl_Interface:
                 raise Exception('Timeout in lpGBT configuration')
 
         return data, number_of_successful_transactions
-

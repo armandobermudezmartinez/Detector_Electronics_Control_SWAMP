@@ -1,6 +1,7 @@
 import gbtsca_tx
 import gbtsca_rx
 from transactor_config import transactor_config as config
+from time import sleep
 
 
 class Transactor:
@@ -10,50 +11,62 @@ class Transactor:
         self.reply_address = config['repl_address']
         self.sca_address = config['sca_address']
         self.free_transaction_ids = list(range(1, 1025))
+        self._transaction_id = None
         self.transaction = []
         self.comments = []
+        self.response = []
         self.number_of_transactions = 0
         self.number_of_successful_transactions = 0
+        self.cache_CRB = 0
+        self.cache_CRC = 0
+        self.cache_CRD = 0b10000
 
     def flush(self):
         self.response = []
         self.comments = []
-        self.number_of_transactions = int(len(self.transaction)/4)
         self.sc_interface.message = self.transaction
         self.received_data, self.number_of_successful_transactions = self.sc_interface.flush()
+        sleep(0.01)
         for i in range(self.number_of_transactions):
             decoded_data = self.gbtsca_rx_decode(
                 self.received_data[4*i: 4*(i+1)])
             self.response += [decoded_data]
             if (decoded_data['trans_id']):
-                self.free_transaction_ids.append(decoded_data['trans_id'])
+                if decoded_data['trans_id']:
+                    self.free_transaction_ids.append(decoded_data['trans_id'])
         self.transaction = []
 
-    def write(self, channel, command, command_id=0b100, mask=0, data=0, comment=''):
+    def write(self, channel, command, command_id=0b100, mask=None, data=0, cache=None, comment='', pop_id=1):
         if len(self.free_transaction_ids) == 0:
             raise Exception("No more free transaction IDs")
-        self._transaction_id = self.free_transaction_ids.pop(0)
-        masked_data = (~data & mask) | (data & mask)
+        if pop_id:
+            self._transaction_id = self.free_transaction_ids.pop(0)
+        if cache:
+            data |= cache
+        if mask:
+            data = ((~mask) & data) | (data & mask)
+
         self.transaction += self.gbtsca_tx_encode(self.broadcast_address, self.reply_address, command_id,
-                                                  self.sca_address, self._transaction_id, channel, command, masked_data)
+                                                  self.sca_address, self._transaction_id, channel, command, data)
         self.comments += [comment]
 
-    def read(self):
-        number_of_transactions = int(len(self.transaction)/4)
+    def send(self):
+        self.number_of_transactions = int(len(self.transaction)/4)
         decoded_transaction = []
         encoded_transaction = self.transaction
         comments = self.comments
-        for i in range(number_of_transactions):
+        for i in range(self.number_of_transactions):
             decoded_transaction.append(self._gbtsca_tx_decode(
                 self.transaction[4*i: 4*(i+1)]))
         self.flush()
-        for i in range(number_of_transactions):
+
+        for i in range(self.number_of_transactions):
             print("Transaction:\n", decoded_transaction[i])
             print("Encoded Transaction:\n", encoded_transaction[4*i: 4*(i+1)])
             print("Response:\n", self.response[i])
             print("Comment:", comments[i])
         print(
-            f"Number of Transactions: {number_of_transactions}, Number of Successful Transactions: {number_of_transactions}")
+            f"Number of Transactions: {self.number_of_transactions}, Number of Successful Transactions: {self.number_of_successful_transactions}")
         print(120*"-")
 
     def gbtsca_tx_encode(self, bst_address, repl_address, cmd_id, sca_address, trans_id, ch_address, cmd, payload):

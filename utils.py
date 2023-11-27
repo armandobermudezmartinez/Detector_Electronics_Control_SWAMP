@@ -1,9 +1,16 @@
 import logging
-from math import floor, log
+from math import floor, log, ceil, log2
 from copy import deepcopy
 import yaml
 from pathlib import Path
 
+
+def get_4bytes(target, n):
+    return (target & (0xFFFFFFFF << (32*n))) >> (32*n)
+
+
+def get_byte(target, n):
+    return (target & (0xFF << (8*n))) >> (8*n)
 
 def blen(b):
     # number of bits in binary value
@@ -11,6 +18,9 @@ def blen(b):
         return floor(log(b, 2))+1
     except ValueError:
         return 0
+
+def bytelen(N):
+    return ceil(log2(N + 1) / 8)
 
 
 def hexb(b, l):

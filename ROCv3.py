@@ -49,7 +49,6 @@ class ROCv3():
     def __init__(
             self,
             transport,
-            bus,
             base_address,
             name,
             reset_pin,
@@ -79,7 +78,6 @@ class ROCv3():
         self.cache = {}
         self.name = name
         self.path_to_reg_definition = path_to_file
-        self.bus = bus
         self.base_address = base_address
         self.transport = transport
         self.reset_pin = reset_pin
@@ -268,8 +266,7 @@ class ROCv3():
                 self.transaction_logger.debug("Cache hit")
 
         if dict_write_registers:
-            write_registers = [(*key, value)
-                               for key, value in dict_write_registers.items()]
+            write_registers = [(*key, value) for key, value in dict_write_registers.items()]
         return write_registers
 
     def configure(self, configuration: dict, readback=False):
@@ -294,15 +291,14 @@ class ROCv3():
                                      f'{len(register_writes)} registers')
         for reg in register_writes:
             try:
-                self.transport.write(self.bus, self.base_address, reg[0])
-                self.transport.write(self.bus, self.base_address + 1, reg[1])
-                self.transport.write(self.bus, self.base_address + 2, reg[2])
+                self.transport.write(self.base_address, reg[0])
+                self.transport.write(self.base_address + 1, reg[1])
+                self.transport.write(self.base_address + 2, reg[2])
                 if readback:
-                    self.transport.write(self.bus, self.base_address, reg[0])
-                    self.transport.write(
-                        self.bus, self.base_address + 1, reg[1])
-                    rback_val = self.transport.read(self.bus,
-                                                    self.base_address + 2, 1)
+                    self.transport.write(self.base_address, reg[0])
+                    self.transport.write(self.base_address + 1, reg[1])
+                    #rback_val = self.transport.read(self.base_address + 2, 1)
+                    rback_val = self.transport.read(self.base_address + 2)
                     if rback_val != reg[2]:
                         raise IOError(
                             f'Read back {rback_val} from {(reg[0], reg[1])} '
@@ -345,11 +341,13 @@ class ROCv3():
             parameter_value = 0
             for reg in reglist:
                 if from_hardware is True:
-                    self.transport.write(self.bus, self.base_address, reg[0])
-                    self.transport.write(
-                        self.bus, self.base_address + 1, reg[1])
-                    read_content = self.transport.read(self.bus,
-                                                       self.base_address + 2, 1)
+                    self.transport.write(self.base_address, reg[0])
+                    self.transport.write(self.base_address + 1, reg[1])
+                    #read_content = self.transport.read(
+                    #    self.base_address + 2, 1)
+                    read_content = self.transport.read(
+                        self.base_address + 2)
+                    print("Done reading", read_content)
                 else:
                     read_content = self.cache[(reg[0], reg[1])]
 
@@ -381,9 +379,11 @@ class ROCv3():
             self.cache[(row['R0'], row['R1'])] |= int(row['defval_mask'])
 
     def reset(self):
-        self.reset_pin.write(0)
-        self.reset_cache()
+        pass
         self.reset_pin.write(1)
+        self.reset_pin.write(0)
+        self.reset_pin.write(1)
+        self.reset_cache()
 
     def describe(self, _validation_config: dict = None):
         """
