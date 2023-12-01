@@ -13,7 +13,7 @@ class SCA_GPIO:
         self._outputs_cache = 0
         self.cache_output = 0
         self.cache_mask = 0
-        # print(CTRL["CHANNEL_CTRL"], GPIO["CHANNEL"])
+        #print(CTRL["CHANNEL_CTRL"], GPIO["CHANNEL"])
 
     def __getitem__(self, pin_number):
         if pin_number not in range(self.number_of_pins):
@@ -28,14 +28,14 @@ class SCA_GPIO:
     def _enable(self, enableGPIO=1):
         m3, d3 = CTRL["MASK_CRB_PARAL"], CTRL["MASK_CRB_PARAL"] if enableGPIO else 0
         mask, data = from_8bit_to_32bit(m3), from_8bit_to_32bit(d3)
-        # print('dataaa', data)
+        #print('dataaa', data)
         cache = from_8bit_to_32bit(self.transactor.cache_CRB)
         self.transactor.write(CTRL["CHANNEL_CTRL"],
-                              CTRL["W_CRB"], mask=mask, data=data, cache=cache, comment='Enable all Pins')
-        # print('i2c mask', bin(m3))
-        # print('gpio data', bin(d3), 'cache CRB', bin(self.transactor.cache_CRB))
+                              CTRL["W_CRB"], mask=mask, data=data, cache=cache, comment='Enable all Pins')     
+        #print('i2c mask', bin(m3))
+        #print('gpio data', bin(d3), 'cache CRB', bin(self.transactor.cache_CRB))
         self.transactor.cache_CRB |= d3
-        # print('enable CRB', self.transactor.cache_CRB)
+        #print('enable CRB', self.transactor.cache_CRB)
         self.transactor.send()
 
     def _read_enable(self):
@@ -49,6 +49,7 @@ class SCA_GPIO:
             GPIO["CHANNEL"], GPIO["W_DIRECTION"], mask=self._mode, data=self._mode, comment=f'Set Mode of Pin {pin}')
         self.transactor.send()
 
+
     def _get_mode(self):
         self.transactor.write(
             GPIO["CHANNEL"], GPIO["R_DIRECTION"], comment='Reading the Mode of all Pins')
@@ -56,20 +57,22 @@ class SCA_GPIO:
 
     def _get_output(self):
         self.transactor.write(GPIO["CHANNEL"],
-                              GPIO["R_DATAOUT"], comment='Get gpio output')
+                         GPIO["R_DATAOUT"], comment='Get gpio output')
         self.transactor.send()
 
-    def _write(self, pin, output):
+    def _write(self, pin, output): 
         mask = 1 << pin
         output = output << pin
+        self.cache_output = (~mask) & self.cache_output
         self.cache_output = self.cache_output | output
         self.transactor.write(
-            GPIO["CHANNEL"], GPIO["W_DATAOUT"], mask=mask, data=self.cache_output, comment=f'Write {output >> pin} to pin {pin}')
+                GPIO["CHANNEL"], GPIO["W_DATAOUT"], mask=mask, data=self.cache_output, comment=f'Write {output >> pin} to pin {pin}')
+        #self.cache_output = self.cache_output | output
         self.transactor.send()
-
+        #print('mask', mask, 'cache', self.cache_output,'output', output)
     def _read(self):
         self.transactor.write(GPIO["CHANNEL"],
-                              GPIO["R_DATAIN"], comment='Read gpio')
+                         GPIO["R_DATAIN"], comment='Read gpio')
         self.transactor.send()
 
 
@@ -93,3 +96,4 @@ class Pin:
         if self._mode == 1:
             self.sca_gpio._write(self.pin_number, output)
             self.output = output
+ 

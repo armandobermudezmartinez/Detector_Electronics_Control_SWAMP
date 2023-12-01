@@ -127,8 +127,7 @@ class SCA_I2C:
         mask, data = from_8bit_to_32bit(m3), from_8bit_to_32bit(d3)
         self.transactor.write(
             channel, I2C["W_CTRL_REG"], mask=mask, data=data, comment=f'Set communication speed of I2C {index} to {speed} kHz')
-        self.ctrl_cache = (self.ctrl_cache & ~
-                           I2C["MASK_CTRL_REG_SPEED"]) | speeds[speed]
+        self.ctrl_cache =  (self.ctrl_cache & ~I2C["MASK_CTRL_REG_SPEED"]) | speeds[speed]
 
     def _read_speed(self, index):
         channel = I2C["CHANNEL_MAP"][index]
@@ -193,6 +192,7 @@ class SCA_I2C:
         address = address << 24
         self.transactor.send()
 
+
     def _7bit_addressing_single_byte_read(self, index, address):
         channel = I2C["CHANNEL_MAP"][index]
         address = address << 24
@@ -203,9 +203,10 @@ class SCA_I2C:
         channel = I2C["CHANNEL_MAP"][index]
         last_bits = 0b1110 << 26
         address = (address << 16)
-        address |= last_bits
+        address |= last_bits 
         self.transactor.write(
             channel, I2C["R_7B_SINGLE"], data=address, comment=f'i2c {index}, 10-bit addressing mode read from address {hex(address)}')
+
 
     def _7bit_addressing_multi_byte_read(self, index, address, number_of_bytes):
         channel = I2C["CHANNEL_MAP"][index]
@@ -255,33 +256,27 @@ class I2C_Master(SCA_I2C):
 
     def write(self, address, data, communication_mode=0):
         if communication_mode == 0:
-            self.sca_i2c._7bit_addressing_single_byte_write(
-                self.index, address, data)
+            self.sca_i2c._7bit_addressing_single_byte_write(self.index, address, data)
             self.sca_i2c.transactor.send()
         elif (communication_mode == 1):
-            self.sca_i2c._10bit_addressing_single_byte_write(
-                self.index, address, data)
+            self.sca_i2c._10bit_addressing_single_byte_write(self.index, address, data)
             self.sca_i2c.transactor.send()
         elif (communication_mode == 2):
-            self.sca_i2c._7bit_addressing_multi_byte_write(
-                self.index, address, data)
+            self.sca_i2c._7bit_addressing_multi_byte_write(self.index, address, data)
         else:
-            raise Exception(
-                "Allowed communication modes are 0: 7-bit addressing single-byte write, 1: 7-bit addressing single-byte write, 2: 7-bit addressing multi-byte write")
+            raise Exception("Allowed communication modes are 0: 7-bit addressing single-byte write, 1: 7-bit addressing single-byte write, 2: 7-bit addressing multi-byte write")
 
     def read(self, address, communication_mode=0, number_of_bytes=16):
         if communication_mode == 0:
             self.sca_i2c._7bit_addressing_single_byte_read(self.index, address)
             self.sca_i2c.transactor.send()
         elif (communication_mode == 1):
-            self.sca_i2c._10bit_addressing_single_byte_read(
-                self.index, address)
+            self.sca_i2c._10bit_addressing_single_byte_read(self.index, address)
         elif (communication_mode == 2):
-            self.sca_i2c._7bit_addressing_multi_byte_read(
-                self.index, address, number_of_bytes)
+            self.sca_i2c._7bit_addressing_multi_byte_read(self.index, address, number_of_bytes)
         else:
-            raise Exception(
-                "Allowed communication modes are 0: 7-bit addressing single-byte read, 1: 7-bit addressing single-byte read, 2: 7-bit addressing multi-byte read")
+            raise Exception("Allowed communication modes are 0: 7-bit addressing single-byte read, 1: 7-bit addressing single-byte read, 2: 7-bit addressing multi-byte read")
+        #print("payload", self.sca_i2c.transactor.response[-1]["payload"], get_byte(self.sca_i2c.transactor.response[-1]["payload"], 2))
         return get_byte(self.sca_i2c.transactor.response[-1]["payload"], 2)
 
     def _read_control_register(self):
@@ -293,3 +288,4 @@ class I2C_Master(SCA_I2C):
         self.sca_i2c.transactor.write(
             self.channel, I2C["R_STATUS_REG"], comment=f'Read i2c status register')
         self.sca_i2c.transactor.send()
+
