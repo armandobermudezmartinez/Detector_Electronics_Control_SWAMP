@@ -2,7 +2,8 @@ import pandas as pd
 import logging
 
 import dict_utils
-
+from utils import LINE
+import pickle
 
 def count_bits(number):
     """
@@ -52,7 +53,9 @@ class ROCv3():
             base_address,
             name,
             reset_pin,
-            path_to_file):
+            path_to_file=None,
+            path_to_pickle=None,
+            out_pickle='HGCROCv3_tables.pkl'):
         """
         Software counterpart of the HGCROCv3 ASIC to be used with the test
         systems
@@ -84,8 +87,23 @@ class ROCv3():
 
         # Set ROC to reset during init
         self.reset_pin.write(0)
+       
+        if path_to_pickle:
+            with open(path_to_pickle, 'rb') as pickle_file:
+                tables = pickle.load(pickle_file)
+            self.cache, self.validation_config, self.translation_dict = tables['cache'], tables['validation_config'], tables['translation_dict']
+        else: 
+            self.read_from_csv(path_to_file, out_pickle=out_pickle)
+        
+        self.cache_default = self.cache       
+ 
+        # release the roc from reset
+        self.reset_pin.write(1)
+        self.transaction_logger.info("Initialization complete")
 
         # read in source of truth of the ROCv3 configuration
+
+    def read_from_csv(self, path_to_file, out_pickle=None):
         self.config_table = pd.read_csv(path_to_file)
         keys = self.config_table[['R0', 'R1']].drop_duplicates()
 
@@ -135,10 +153,15 @@ class ROCv3():
         # turn the bits of the different defval_masks on
         for _, row in self.config_table.iterrows():
             self.cache[(row['R0'], row['R1'])] |= row['defval_mask']
+            self.cache_default = self.cache
 
-        # release the roc from reset
-        self.reset_pin.write(1)
-        self.transaction_logger.info("Initialization complete")
+
+        if out_pickle is not None:
+            tables = {'cache': self.cache, 'validation_config': self.validation_config,
+                      'translation_dict': self.translation_dict}
+            with open(out_pickle, 'wb') as outfile:
+                pickle.dump(tables, outfile)
+
 
     def _validate(self, config: dict, reference: dict = None, read=False,
                   log_message_written=False):
@@ -310,7 +333,7 @@ class ROCv3():
         self.transaction_logger.info('Configuration written to '
                                      f'{len(register_writes)} registers')
 
-    def read(self, configuration, from_hardware):
+    def read(self, configuration, from_hardware=True):
         """
         Reads register values from cache
 
@@ -322,6 +345,7 @@ class ROCv3():
         :return: The values of parameters read from cache
         :rtype: dict
         """
+
         try:
             self._validate(configuration, read=True)
         except KeyError as err:
@@ -334,6 +358,7 @@ class ROCv3():
         parameters = []
         self.transaction_logger.info(f'Reading {len(parameters_to_be_read)} '
                                      'parameters')
+
         if from_hardware is True:
             self.transaction_logger.info("Reading directly from registers")
         # read the values from the registers
@@ -347,39 +372,42 @@ class ROCv3():
                     #    self.base_address + 2, 1)
                     read_content = self.transport.read(
                         self.base_address + 2)
-                    print("Done reading", read_content)
                 else:
                     read_content = self.cache[(reg[0], reg[1])]
-
                 if reg[2] < 0:
                     read_content = (read_content & reg[3]) >> -reg[2]
+
                 else:
                     read_content = (read_content & reg[3]) << reg[2]
-                parameter_value = parameter_value | read_content
-            parameters.append((param, parameter_value))
 
+                parameter_value = parameter_value | read_content
+
+            parameters.append((param, parameter_value))
         # build the dict
         result = {}
         for keylist, value in parameters:
             subdict = dict_utils.nested_dict_from_keylist(keylist, value)
             dict_utils.update_dict(result, subdict, in_place=True)
+
         if from_hardware is True:
             self.transaction_logger.info(f'{len(parameters_to_be_read)} '
                                          'parameters read from registers')
+
         else:
             self.transaction_logger.info(f'{len(parameters_to_be_read)} '
                                          'parameters read from cache')
+
         return result
 
     def reset_cache(self):
         # clear the cache by writing 0 into every location
-        for key in self.cache.keys():
-            self.cache[key] = 0
-        for _, row in self.config_table.iterrows():
-            self.cache[(row['R0'], row['R1'])] |= int(row['defval_mask'])
+        #for key in self.cache.keys():
+        #    self.cache[key] = 0
+        #for _, row in self.config_table.iterrows():
+        #    self.cache[(row['R0'], row['R1'])] |= int(row['defval_mask'])
+        self.cache = self.cache_default
 
     def reset(self):
-        pass
         self.reset_pin.write(1)
         self.reset_pin.write(0)
         self.reset_pin.write(1)

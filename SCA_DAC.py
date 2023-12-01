@@ -8,8 +8,18 @@ class SCA_DAC:
         self.transactor = transactor
         self.dac = {'a': None, 'b': None, 'c': None, 'd': None}
         self.dac_block_disabled = True
+        self.max_voltage = 1.25 # maximum voltage of the DACs in Volts
+        self.min_voltage = 0. # maximum voltage of the DACs in Volts
+        self.max_value = 0xFF # maximum value of the DACs
+        self.min_value = 0x00 # maximum value of the DACs
+
 
     def __getitem__(self, dac_channel):
+        if dac_channel == 0: dac_channel = 'a'
+        if dac_channel == 1: dac_channel = 'b'
+        if dac_channel == 2: dac_channel = 'c'
+        if dac_channel == 3: dac_channel = 'd'
+
         if dac_channel.lower() not in self.dac.keys():
             raise Exception("DAC channel not within defined values: a, b, c, d")
         if self.dac_block_disabled:
@@ -61,16 +71,39 @@ class DAC:
     def __init__(self, sca_dac, dac_channel):
         self.sca_dac = sca_dac
         self.dac_channel = dac_channel
-        print(sca_dac.dac_block_disabled, dac_channel)
-        self.sca_dac.transactor.send()
 
-    def write(self, value):
+    def set_voltage_range(self, min_voltage, max_voltage):
+        self.sca_dac.max_voltage = max_voltage
+        self.sca_dac.min_voltage = min_voltage
+
+    def set_value_range(self, min_value, max_value):
+        self.sca_dac.max_value = max_value
+        self.sca_dac.min_value = min_value
+
+    def write(self, voltage=None, value=None):
+        if value is None:
+            if voltage is None:
+                if not self.sca_dac.min_value <= value <= self.sca_dac.max_value:
+                    raise Exception(f"Please provide a valid voltage or value")
+            a = (self.sca_dac.max_value - self.sca_dac.min_value)/(self.sca_dac.max_voltage - self.sca_dac.min_voltage)
+            b = self.sca_dac.min_value - a*self.sca_dac.min_voltage 
+            value = int(voltage*a + b)
+        else:
+            a = (self.sca_dac.max_voltage - self.sca_dac.min_voltage)/(self.sca_dac.max_value - self.sca_dac.min_value)
+            b = self.sca_dac.min_voltage - a*self.sca_dac.min_value
+            voltage = round(value*a + b, 3)
+        if not self.sca_dac.min_value <= value <= self.sca_dac.max_value:
+            raise Exception(f"Voltage out of range of the DAC [{self.sca_dac.min_voltage}, {self.sca_dac.max_voltage}]")
         self.sca_dac._write(self.dac_channel, value)
+        self.sca_dac.transactor.send()
         self.value = value
-        print('=====value: ', value)
+        self.voltage = voltage
+        print('value: ', value, 'voltage', voltage)
+ 
     def read(self):
         self.sca_dac._read(self.dac_channel)
-        
+        self.sca_dac.transactor.send()
+
       
 
 

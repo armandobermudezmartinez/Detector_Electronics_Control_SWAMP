@@ -17,12 +17,6 @@ transactor = Transactor(sc_interface=sc_interface)
 # Instantiate the GBT_SCA(s).
 sca = GBT_SCA(transactor=transactor)
 
-# Instantiate ADC(s).
-adc = sca.adc[0]
-
-# Instantiate the DAC(s).
-dac = sca.dac['a']
-
 # Instantiate the GPIO(s).
 pin = []
 for i in range(32):
@@ -61,23 +55,17 @@ pin[29].mode('in')
 pin[30].mode('out')
 pin[31].mode('out')
 
-#switch on the LDOs to power the HGCROC.
+## Switch on the LDOs to power the HGCROC.
 pin[22].write(1)
 pin[23].write(1)
 
-# Need to wait some time for the LDO to power on
-#sleep(1)
+## Need to wait some time for the LDO to power on
+sleep(1)
 
-# Set the SOFT_RSTB and I2C_RSTB to 1, which means "no reset"
+## Set the SOFT_RSTB and I2C_RSTB to 1, which means "no reset"
 pin[2].write(1)
 pin[3].write(1)
 
-# Set the HARD_RSTB to "1", "0", "1" to reset the whole HGCROC. (Has to do this upon power on)
-#################
-pin[4].write(1)
-pin[4].write(0)
-pin[4].write(1)
-#################
 pin[7].write(1)
 pin[8].write(0)
 pin[9].write(0)
@@ -88,39 +76,18 @@ pin[13].write(0)
 pin[14].write(0)
 pin[15].write(0)
 
-# Instantiate the I2C(s).
 
-i2c0 = sca.i2c[0]
-i2c1 = sca.i2c[1]
+# Instantiate the ADC(s).
+adc = []
+for i in range(32):
+    adc.append(sca.adc[i])
+    adc[i].read()
 
-# Instantiate the ROC(s).
+input('press enter')
 
-roc0 = ROCv3(transport=i2c0,
-       base_address=0x28,
-       name='roc0',
-       reset_pin=pin[4],
-       path_to_pickle='HGCROCv3_tables.pkl')
-
-roc1 = ROCv3(transport=i2c1,
-       base_address=0x38,
-       name='roc1',
-       reset_pin=pin[4],
-       path_to_pickle='HGCROCv3_tables.pkl')
-
-configuration0 = load_yaml('roc_test_config0.yml')
-configuration1 = load_yaml('roc_test_config1.yml')
-
-roc0.configure(configuration0)
-roc1.configure(configuration1)
-
-print(f"Reading parameters of {roc0.name}:", roc0.read(configuration0))
-print(f"Reading parameters of {roc1.name}:", roc1.read(configuration1))
-
-roc0.reset()
-roc1.reset()
-
-print(f"Reading parameters of {roc0.name}:", roc0.read(configuration0))
-print(f"Reading parameters of {roc1.name}:", roc1.read(configuration1))
-
+## Read temperature from the sensor in ADC 31
+while True:
+    adc[31].read()
+    sleep(1)
 
 

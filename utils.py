@@ -3,7 +3,10 @@ from math import floor, log, ceil, log2
 from copy import deepcopy
 import yaml
 from pathlib import Path
+import sys
 
+def LINE():
+   return sys._getframe(1).f_lineno
 
 def get_4bytes(target, n):
     return (target & (0xFFFFFFFF << (32*n))) >> (32*n)
